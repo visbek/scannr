@@ -39,7 +39,7 @@ export default function LoginPage() {
     <main
       style={{
         minHeight: "100vh",
-        background: "#ffffff",
+        background: "#F5F1EA",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -48,6 +48,23 @@ export default function LoginPage() {
       }}
     >
       <div style={{ width: "100%", maxWidth: 400 }}>
+        {/* Back link */}
+        <div style={{ marginBottom: 24 }}>
+          <a
+            href="https://scanrr.sparrwo.com"
+            style={{
+              fontFamily: "var(--font-mono, monospace)",
+              fontSize: 12,
+              color: "#888",
+              textDecoration: "none",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#0a0a0a")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#888")}
+          >
+            ← Back to Scanrr
+          </a>
+        </div>
+
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <a
@@ -61,7 +78,7 @@ export default function LoginPage() {
               letterSpacing: "-0.02em",
             }}
           >
-            sparrwo
+            Scanrr
           </a>
         </div>
 
@@ -227,7 +244,7 @@ export default function LoginPage() {
               type="submit"
               disabled={loading}
               style={{
-                background: loading ? "#f0f0ed" : "#f97316",
+                background: loading ? "#f0f0ed" : "#1A3A2E",
                 color: loading ? "#999990" : "#ffffff",
                 border: "none",
                 borderRadius: 6,
@@ -239,8 +256,8 @@ export default function LoginPage() {
                 marginTop: 4,
                 transition: "background 150ms ease",
               }}
-              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "#ea6c00"; }}
-              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = "#f97316"; }}
+              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "#243F33"; }}
+              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = "#1A3A2E"; }}
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>
@@ -259,7 +276,7 @@ export default function LoginPage() {
           Don&apos;t have an account?{" "}
           <a
             href="/signup"
-            style={{ color: "#f97316", textDecoration: "none", fontWeight: 500 }}
+            style={{ color: "#1A3A2E", textDecoration: "none", fontWeight: 500 }}
             onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
             onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
           >

@@ -16,8 +16,8 @@ export function HeroSection({ domain, status, onDomainChange, onScan }: HeroSect
   return (
     <section
       style={{
-        background: "#ffffff",
-        borderBottom: isIdle ? "none" : "1px solid #e5e5e0",
+        background: "#F5F1EA",
+        borderBottom: isIdle ? "none" : "1px solid #D8D2C8",
       }}
       className={
         isIdle
@@ -54,7 +54,7 @@ export function HeroSection({ domain, status, onDomainChange, onScan }: HeroSect
                 fontSize: "clamp(40px, 6vw, 68px)",
                 lineHeight: 1.05,
                 letterSpacing: "-0.01em",
-                color: "#0a0a0a",
+                color: "#0E1F18",
                 marginBottom: 24,
                 animationDelay: "0.08s",
               }}
@@ -74,7 +74,7 @@ export function HeroSection({ domain, status, onDomainChange, onScan }: HeroSect
                 animationDelay: "0.16s",
               }}
             >
-              sparrwo scans ChatGPT, Gemini, Claude &amp; Perplexity to show
+              Scanrr scans ChatGPT, Gemini, Claude &amp; Perplexity to show
               exactly where buyers find — or miss — your brand.
             </p>
           </>
@@ -118,7 +118,7 @@ export function HeroSection({ domain, status, onDomainChange, onScan }: HeroSect
             onClick={() => onScan(domain)}
             disabled={isLoading || !domain.trim()}
             style={{
-              background: isLoading ? "#f0f0ed" : "#f97316",
+              background: isLoading ? "#f0f0ed" : "#1A3A2E",
               color: isLoading ? "#999990" : "#ffffff",
               border: "none",
               borderRadius: 6,
@@ -136,10 +136,10 @@ export function HeroSection({ domain, status, onDomainChange, onScan }: HeroSect
               flexShrink: 0,
             }}
             onMouseEnter={(e) => {
-              if (!isLoading && domain.trim()) e.currentTarget.style.background = "#ea6c00";
+              if (!isLoading && domain.trim()) e.currentTarget.style.background = "#243F33";
             }}
             onMouseLeave={(e) => {
-              if (!isLoading) e.currentTarget.style.background = "#f97316";
+              if (!isLoading) e.currentTarget.style.background = "#1A3A2E";
             }}
           >
             {isLoading ? (
@@ -150,7 +150,7 @@ export function HeroSection({ domain, status, onDomainChange, onScan }: HeroSect
                     height: 14,
                     borderRadius: "50%",
                     border: "2px solid #d0d0c8",
-                    borderTopColor: "#f97316",
+                    borderTopColor: "#1A3A2E",
                     display: "inline-block",
                     animation: "sp-ring-spin 0.8s linear infinite",
                     flexShrink: 0,
@@ -208,7 +208,7 @@ export function HeroSection({ domain, status, onDomainChange, onScan }: HeroSect
       {isIdle && (
         <div style={{ width: "100%", marginTop: 96 }}>
 
-          {/* Social proof bar */}
+          {/* Value prop bar */}
           <div
             style={{
               borderTop: "1px solid #e5e5e0",
@@ -217,34 +217,21 @@ export function HeroSection({ domain, status, onDomainChange, onScan }: HeroSect
               background: "#f7f7f5",
             }}
           >
-            <div className="mx-auto max-w-6xl flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+            <div className="mx-auto max-w-6xl flex justify-center">
               <p
                 style={{
                   fontSize: 13,
                   color: "#999990",
                   fontFamily: "var(--font-mono, monospace)",
+                  letterSpacing: "0.04em",
                 }}
               >
-                Trusted by{" "}
-                <span style={{ color: "#0a0a0a", fontWeight: 600 }}>300+ B2B SaaS teams</span>
+                Free scan{" "}
+                <span style={{ color: "#d0d0c8" }}>·</span>
+                {" "}No account needed{" "}
+                <span style={{ color: "#d0d0c8" }}>·</span>
+                {" "}Results in minutes
               </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-                {["Acme Corp", "Streamline HQ", "LaunchPad"].map((name) => (
-                  <span
-                    key={name}
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "#d0d0c8",
-                      fontFamily: "var(--font-mono, monospace)",
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {name}
-                  </span>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -297,7 +284,7 @@ export function HeroSection({ domain, status, onDomainChange, onScan }: HeroSect
                     style={{
                       fontFamily: "var(--font-mono, monospace)",
                       fontSize: 11,
-                      color: "#f97316",
+                      color: "#1A3A2E",
                       letterSpacing: "0.1em",
                       marginBottom: 16,
                     }}
@@ -398,7 +385,7 @@ export function HeroSection({ domain, status, onDomainChange, onScan }: HeroSect
                         fontFamily: "var(--font-mono, monospace)",
                         fontSize: 13,
                         fontWeight: 700,
-                        color: "#f97316",
+                        color: "#1A3A2E",
                       }}
                     >
                       {item.step}
@@ -431,7 +418,7 @@ export function HeroSection({ domain, status, onDomainChange, onScan }: HeroSect
           </div>
 
           {/* Bottom CTA */}
-          <div style={{ padding: "80px 24px", textAlign: "center", background: "#ffffff" }}>
+          <div style={{ padding: "80px 24px", textAlign: "center", background: "#F5F1EA" }}>
             <div style={{ maxWidth: 560, margin: "0 auto" }}>
               <h2
                 style={{
@@ -482,7 +469,7 @@ export function HeroSection({ domain, status, onDomainChange, onScan }: HeroSect
                   onClick={() => onScan(domain)}
                   disabled={!domain.trim()}
                   style={{
-                    background: "#f97316",
+                    background: "#1A3A2E",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 6,
@@ -497,9 +484,9 @@ export function HeroSection({ domain, status, onDomainChange, onScan }: HeroSect
                     flexShrink: 0,
                   }}
                   onMouseEnter={(e) => {
-                    if (domain.trim()) e.currentTarget.style.background = "#ea6c00";
+                    if (domain.trim()) e.currentTarget.style.background = "#243F33";
                   }}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "#f97316")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "#1A3A2E")}
                 >
                   Check My Visibility
                 </button>
