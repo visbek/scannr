@@ -5,7 +5,8 @@ import { useState, useEffect, useRef } from "react";
 const R = 54;
 const CIRC = 2 * Math.PI * R;
 
-function scoreColor(score: number) {
+function scoreColor(score: number | null) {
+  if (score === null) return "#777";
   if (score > 66) return "#16a34a";
   if (score >= 33) return "#f97316";
   return "#dc2626";
@@ -30,8 +31,8 @@ function useCountUp(target: number, active: boolean, duration = 1500) {
   return value;
 }
 
-export function ScoreCircle({ score, active }: { score: number; active: boolean }) {
-  const display = useCountUp(score, active);
+export function ScoreCircle({ score, active }: { score: number | null; active: boolean }) {
+  const display = useCountUp(score ?? 0, active && score !== null);
   const [go, setGo] = useState(false);
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export function ScoreCircle({ score, active }: { score: number; active: boolean 
     setGo(false);
   }, [active]);
 
-  const offset = go ? CIRC * (1 - score / 100) : CIRC;
+  const offset = go ? CIRC * (1 - (score ?? 0) / 100) : CIRC;
 
   return (
     <div className="relative" style={{ width: 160, height: 160 }}>
@@ -82,7 +83,7 @@ export function ScoreCircle({ score, active }: { score: number; active: boolean 
             color: scoreColor(score),
           }}
         >
-          {display}
+          {score === null ? "—" : display}
         </span>
         <span
           style={{

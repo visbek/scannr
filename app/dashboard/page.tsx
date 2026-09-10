@@ -63,7 +63,7 @@ export default function DashboardPage() {
       <main
         style={{
           minHeight: "100vh",
-          background: "#ffffff",
+          background: "#F5F1EA",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -82,19 +82,18 @@ export default function DashboardPage() {
     );
   }
 
-  const avgScore =
-    scans.length > 0
-      ? Math.round(scans.reduce((s, sc) => s + (sc.score ?? 0), 0) / scans.length)
-      : null;
-  const bestScore =
-    scans.length > 0 ? Math.max(...scans.map((sc) => sc.score ?? 0)) : null;
+  const measuredScores = scans.flatMap((scan) => scan.score === null ? [] : [scan.score]);
+  const avgScore = measuredScores.length
+    ? Math.round(measuredScores.reduce((sum, score) => sum + score, 0) / measuredScores.length)
+    : null;
+  const bestScore = measuredScores.length ? Math.max(...measuredScores) : null;
 
   const scansRemaining = profile
     ? profile.scans_limit - profile.scans_used
     : null;
 
   return (
-    <main style={{ minHeight: "100vh", background: "#ffffff" }}>
+    <main style={{ minHeight: "100vh", background: "#F5F1EA" }}>
       {/* Header */}
       <header
         style={{
@@ -106,7 +105,7 @@ export default function DashboardPage() {
           justifyContent: "space-between",
           position: "sticky",
           top: 0,
-          background: "#ffffff",
+          background: "#F5F1EA",
           zIndex: 40,
         }}
       >
@@ -115,11 +114,11 @@ export default function DashboardPage() {
             fontFamily: "var(--font-sans, system-ui)",
             fontWeight: 700,
             fontSize: 16,
-            color: "#0a0a0a",
+            color: "#0E1F18",
             letterSpacing: "-0.02em",
           }}
         >
-          sparrwo
+          Scanrr
         </span>
 
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -190,9 +189,9 @@ export default function DashboardPage() {
                 style={{
                   fontFamily: "var(--font-mono, monospace)",
                   fontSize: 11,
-                  color: "#f97316",
-                  background: "rgba(249,115,22,0.08)",
-                  border: "1px solid rgba(249,115,22,0.2)",
+                  color: "#1A3A2E",
+                  background: "rgba(26,58,46,0.08)",
+                  border: "1px solid rgba(26,58,46,0.2)",
                   borderRadius: 4,
                   padding: "2px 8px",
                   textTransform: "uppercase",
@@ -208,7 +207,7 @@ export default function DashboardPage() {
           <a
             href="/"
             style={{
-              background: "#f97316",
+              background: "#1A3A2E",
               color: "#ffffff",
               border: "none",
               borderRadius: 6,
@@ -220,8 +219,8 @@ export default function DashboardPage() {
               transition: "background 150ms ease",
               display: "inline-block",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#ea6c00")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#f97316")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#243F33")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#1A3A2E")}
           >
             + New Scan
           </a>
@@ -310,7 +309,7 @@ export default function DashboardPage() {
               <a
                 href="/"
                 style={{
-                  color: "#f97316",
+                  color: "#1A3A2E",
                   fontFamily: "var(--font-sans, system-ui)",
                   fontSize: 14,
                   fontWeight: 500,
@@ -408,7 +407,7 @@ export default function DashboardPage() {
                     })}
                   </span>
                   <a
-                    href={`/?domain=${scan.domain}`}
+                    href={`/reports/${scan.id}`}
                     style={{
                       fontFamily: "var(--font-sans, system-ui)",
                       fontSize: 13,
@@ -417,7 +416,7 @@ export default function DashboardPage() {
                       textDecoration: "none",
                       transition: "color 150ms ease",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = "#f97316")}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "#1A3A2E")}
                     onMouseLeave={(e) => (e.currentTarget.style.color = "#555550")}
                   >
                     View Report →

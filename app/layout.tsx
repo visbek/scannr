@@ -21,9 +21,60 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "sparrwo — Know where your brand lives in AI search",
-  description:
-    "sparrwo scans ChatGPT, Gemini, Claude & Perplexity to show exactly where buyers find your brand.",
+  title: "Scanrr — Free AI Visibility Checker",
+  description: "Check where your brand appears on ChatGPT, Perplexity, Gemini & Claude. Free AI visibility scan — see your score in 60 seconds.",
+  metadataBase: new URL("https://scanrr.sparrwo.com"),
+  alternates: {
+    canonical: "https://scanrr.sparrwo.com",
+  },
+  openGraph: {
+    title: "Scanrr — Free AI Visibility Checker",
+    description: "Check where your brand appears on ChatGPT, Perplexity, Gemini & Claude. Free AI visibility scan — see your score in 60 seconds.",
+    url: "https://scanrr.sparrwo.com",
+    siteName: "Scanrr by Sparrwo",
+    type: "website",
+    locale: "en_US",
+    images: [
+      {
+        url: "https://scanrr.sparrwo.com/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Scanrr — Free AI Visibility Checker",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Scanrr — Free AI Visibility Checker",
+    description: "Check where your brand appears on ChatGPT, Perplexity, Gemini & Claude. Free scan in 60 seconds.",
+    images: ["https://scanrr.sparrwo.com/og-image.png"],
+  },
+  keywords: [
+    "AI visibility checker",
+    "AI search visibility",
+    "ChatGPT brand visibility",
+    "Perplexity brand ranking",
+    "AI search ranking tool",
+    "brand visibility AI",
+    "AEO tool",
+    "answer engine optimization",
+    "LLM visibility scanner",
+    "AI citation checker",
+  ],
+  verification: {
+    google: "dZnpzpjEmnmFTxixWO-GLe4k0BXHBFlhUmeHhnI71_g",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
+  },
 };
 
 export default function RootLayout({

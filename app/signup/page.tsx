@@ -44,7 +44,7 @@ export default function SignupPage() {
     <main
       style={{
         minHeight: "100vh",
-        background: "#ffffff",
+        background: "#F5F1EA",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -66,7 +66,7 @@ export default function SignupPage() {
               letterSpacing: "-0.02em",
             }}
           >
-            sparrwo
+            Scanrr
           </a>
         </div>
 
@@ -270,7 +270,7 @@ export default function SignupPage() {
               type="submit"
               disabled={loading}
               style={{
-                background: loading ? "#f0f0ed" : "#f97316",
+                background: loading ? "#f0f0ed" : "#1A3A2E",
                 color: loading ? "#999990" : "#ffffff",
                 border: "none",
                 borderRadius: 6,
@@ -282,8 +282,8 @@ export default function SignupPage() {
                 marginTop: 4,
                 transition: "background 150ms ease",
               }}
-              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "#ea6c00"; }}
-              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = "#f97316"; }}
+              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "#243F33"; }}
+              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = "#1A3A2E"; }}
             >
               {loading ? "Creating account..." : "Create account"}
             </button>
@@ -302,7 +302,7 @@ export default function SignupPage() {
           Already have an account?{" "}
           <a
             href="/login"
-            style={{ color: "#f97316", textDecoration: "none", fontWeight: 500 }}
+            style={{ color: "#1A3A2E", textDecoration: "none", fontWeight: 500 }}
             onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
             onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
           >
