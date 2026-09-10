@@ -37,6 +37,7 @@ async function redditSearch(industry: string): Promise<string[]> {
 export async function generateKeywords({ domain, industry, companyName, whatTheySell, buyerLocation }: {
   domain: string; industry: string; companyName: string; whatTheySell: string; buyerLocation: string;
 }): Promise<KeywordsData> {
+    if (!process.env.ANTHROPIC_API_KEY) throw new Error("Keyword provider unavailable");
     // Run all 4 searches in parallel
     const [highIntent, comparison, reddit, alternatives] = await Promise.all([
       serperSearch(`${whatTheySell || industry} ${buyerLocation} providers pricing`.trim()),
@@ -123,5 +124,8 @@ Generate up to 8 keywords per tier. Return fewer when research is insufficient. 
         ...item, searchVolume: "Not measured",
       }));
     }
-    return keywords as KeywordsData;
+    if (![keywords.tier1, keywords.tier2, keywords.tier3].some((tier) => tier.length)) {
+      throw new Error("Keyword research returned no suggestions");
+    }
+    return { ...keywords, source: "research" } as KeywordsData;
 }

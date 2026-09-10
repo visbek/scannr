@@ -66,6 +66,9 @@ test("run API reuses duplicate questions and competitor answers and saves usage 
     assert.equal(report.usage.reused["duplicate-prompt"], 4);
     assert.equal(writes, 1, "persistence must finish before the response");
     assert.equal(report.saveStatus, "saved");
+    assert.equal(report.keywordsData.source, "scan-prompts");
+    assert.equal(report.keywordsData.tier2.length, 1, "failed keyword research reuses and deduplicates existing questions");
+    assert.equal(report.keywordsData.tier2[0].llmPotential, "Not assessed");
     assert.equal(report.comparisonScore, 100);
     assert.deepEqual(report.coverage, { successful: 2, total: 8 });
     assert.equal(report.results[0].gemini.sentiment, undefined, "failed verification must not invent sentiment");

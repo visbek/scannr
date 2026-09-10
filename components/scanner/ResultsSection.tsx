@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
+import { keywordsFromPrompts, KEYWORD_FALLBACK_NOTE } from "@/lib/keyword-fallback";
 import { ScoreCircle } from "@/components/scanner/ScoreCircle";
 import {
   type ScanData,
@@ -340,11 +341,12 @@ function EngineCard({
 export interface KeywordItem {
   keyword: string;
   searchVolume: "High" | "Medium" | "Low" | "Not measured";
-  llmPotential: "High" | "Medium" | "Low";
+  llmPotential: "High" | "Medium" | "Low" | "Not assessed";
   why: string;
 }
 
 export interface KeywordsData {
+  source?: "research" | "scan-prompts";
   tier1: KeywordItem[];
   tier2: KeywordItem[];
   tier3: KeywordItem[];
@@ -515,7 +517,7 @@ function KeywordsSection({ keywordsData, keywordsLoading, emailCaptured }: { key
           Keywords to Target
         </h2>
         <p style={{ fontFamily: "var(--font-sans, system-ui)", fontSize: 13, color: "#555550" }}>
-          Suggestions from search research. AI estimates are hypotheses; search volume and revenue impact have not been measured.
+          {keywordsData?.source === "scan-prompts" ? KEYWORD_FALLBACK_NOTE : "Suggestions from search research. AI estimates are hypotheses; search volume and revenue impact have not been measured."}
         </p>
       </div>
 
@@ -982,7 +984,7 @@ function PrintReport({
         {kwTiers.length > 0 && (
           <div style={{ marginBottom: 24 }}>
             <div style={SECTION_LABEL_STYLE}>Keywords to Target</div>
-            <p style={{ fontSize: 10, color: "#555550" }}>AI prioritization estimates, not measured search volume or revenue forecasts.</p>
+            <p style={{ fontSize: 10, color: "#555550" }}>{keywordsData?.source === "scan-prompts" ? KEYWORD_FALLBACK_NOTE : "AI prioritization estimates, not measured search volume or revenue forecasts."}</p>
             {kwTiers.map((tier) => (
               <div key={tier.label} style={{ marginBottom: 16 }}>
                 {/* Tier header */}
@@ -1578,7 +1580,7 @@ interface ResultsSectionProps {
 export function ResultsSection({
   scanData,
   scanHistory = [],
-  keywordsData,
+  keywordsData: suppliedKeywordsData,
   keywordsLoading,
   emailCaptured,
   emailInput,
@@ -1590,6 +1592,7 @@ export function ResultsSection({
   onEmailSubmit,
   sectionRef,
 }: ResultsSectionProps) {
+  const keywordsData = suppliedKeywordsData ?? (keywordsLoading ? null : keywordsFromPrompts(scanData.results));
   const [emailError, setEmailError] = useState("");
 
   const insights = scanData.overallScore !== null && scanData.categoryScores
@@ -1683,8 +1686,8 @@ export function ResultsSection({
         >
           <ScoreCircle score={scanData.overallScore} active={true} />
           {scanData.coverage && <p role="status" className="px-4 text-center text-sm text-slate-600">
-            {scanData.coverage.successful}/{scanData.coverage.total} checks completed.
-            {scanData.coverage.successful < scanData.coverage.total && " Partial coverage — failed or unverified checks are excluded. Treat this score as provisional."}
+            {scanData.coverage.successful}/{scanData.coverage.total} checks usable for scoring.
+            {scanData.coverage.successful < scanData.coverage.total && ` ${scanData.coverage.total - scanData.coverage.successful} checks were unavailable, failed or unverified and are not counted as absences. This score is incomplete. A usable check does not necessarily mean your brand appeared.`}
           </p>}
           <p
             style={{

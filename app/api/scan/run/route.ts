@@ -7,6 +7,7 @@ import { readClaudeAnswer, readGeminiAnswer, readOpenAIAnswer, readPerplexityAns
 
 import { reportSession, saveReport } from "@/lib/report-store";
 import { generateKeywords } from "@/lib/scan-keywords";
+import { keywordsFromPrompts } from "@/lib/keyword-fallback";
 import type { KeywordsData } from "@/components/scanner/ResultsSection";
 
 export const maxDuration = 300;
@@ -670,7 +671,7 @@ async function handlePost(request: NextRequest) {
       factCheckIssues
     ) : [];
 
-    let keywordsData: KeywordsData | null = null;
+    let keywordsData: KeywordsData = keywordsFromPrompts(results);
     if (scores.overallScore !== null) {
       try {
         keywordsData = await generateKeywords({ domain, industry: businessProfile?.industry ?? "", companyName,
