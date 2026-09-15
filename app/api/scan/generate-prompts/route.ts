@@ -606,83 +606,6 @@ Return ONLY the rewritten prompt, no quotes, no explanation.`,
   return parsedPrompts;
 }
 
-// ─── Serper-based prompt validation ──────────────────────────────────────────
-
-async function validatePromptsWithSerper(
-  prompts: Record<string, string[]>,
-  whatTheySell: string,
-  industry: string
-): Promise<Record<string, string[]>> {
-  const categoriesToValidate = ["commercial", "transactional"] as const;
-  const failingPrompts: { cat: "commercial" | "transactional"; idx: number; prompt: string }[] = [];
-
-  for (const cat of categoriesToValidate) {
-    const catPrompts = prompts[cat] ?? [];
-    for (let i = 0; i < catPrompts.length; i++) {
-      const prompt = catPrompts[i];
-      try {
-        const data = await serperSearch(prompt);
-        const organicCount = ((data.organic ?? []) as SerperOrganic[]).length;
-        console.log(`[generate-prompts] [${cat}][${i}] Serper: ${organicCount} results for "${prompt.slice(0, 60)}"`);
-        if (organicCount < 3) {
-          failingPrompts.push({ cat, idx: i, prompt });
-        }
-        await new Promise<void>((resolve) => setTimeout(resolve, 300));
-      } catch {
-        // Skip validation for this prompt on error
-      }
-    }
-  }
-
-  if (failingPrompts.length === 0) {
-    console.log("[generate-prompts] Serper validation OK — all commercial/transactional prompts have results");
-    return prompts;
-  }
-
-  console.log(`[generate-prompts] Serper validation: ${failingPrompts.length} prompts need rewriting`);
-
-  const rewriteList = failingPrompts
-    .map((f, i) => `${i + 1}. [${f.cat}] "${f.prompt}"`)
-    .join("\n");
-
-  const rewritePrompt = `These search prompts returned fewer than 3 Google results — they are too niche or obscure:
-
-${rewriteList}
-
-Context: ${whatTheySell || industry}
-
-Rewrite each using simpler, more searchable phrasing that real buyers would type into ChatGPT. Keep the same purchase intent but use more common language.
-
-CRITICAL: NEVER include any company name, brand name, or domain. Do NOT include any year (2024, 2025, 2026).
-
-Return ONLY a JSON array of rewritten prompts in the same order, nothing else:
-["rewritten prompt 1", "rewritten prompt 2", ...]`;
-
-  try {
-    const rewriteMsg = await callClaudeWithRetry({
-      model: "claude-sonnet-4-5",
-      max_tokens: 800,
-      temperature: 0,
-      messages: [{ role: "user", content: rewritePrompt }],
-    });
-    const rewriteContent = rewriteMsg.content[0];
-    if (rewriteContent.type === "text") {
-      const rewritten = JSON.parse(stripCodeFences(rewriteContent.text)) as string[];
-      if (Array.isArray(rewritten) && rewritten.length === failingPrompts.length) {
-        for (let i = 0; i < failingPrompts.length; i++) {
-          const { cat, idx } = failingPrompts[i];
-          (prompts[cat] as string[])[idx] = rewritten[i];
-          console.log(`[generate-prompts] [${cat}][${idx}] rewritten: "${rewritten[i]}"`);
-        }
-      }
-    }
-  } catch (err) {
-    console.log("[generate-prompts] Prompt rewrite failed:", err instanceof Error ? err.message : err);
-  }
-
-  return prompts;
-}
-
 // ─── Claude API call with retry on 429 ───────────────────────────────────────
 
 async function callClaudeWithRetry(
@@ -997,14 +920,8 @@ Write all 24 prompts as long, conversational questions a real person would type 
     );
   }
 
-  // Validate commercial and transactional prompts against real Serper results
-  if (parsed.prompts && typeof parsed.prompts === "object") {
-    parsed.prompts = await validatePromptsWithSerper(
-      parsed.prompts as Record<string, string[]>,
-      parsed.businessProfile?.whatTheySell ?? "",
-      parsed.businessProfile?.industry ?? ""
-    );
-  }
+  // Google result counts do not measure buyer demand. Keep the contextual and
+  // unbranded-question checks above without a second paid search for each prompt.
 
   // Detect 2-3 competitor domains for share-of-voice comparison in run/route.ts
   const competitors = await detectCompetitors(

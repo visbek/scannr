@@ -106,3 +106,38 @@ test("run API keeps results available when saving fails; all unavailable is not 
     Object.assign(process.env, env);
   }
 });
+
+test("Gemini quota stops queued checks while other engines finish and failed checks stay unscored", async () => {
+  const original = globalThis.fetch, env = { ...process.env };
+  process.env.GEMINI_API_KEY = "test"; process.env.OPENAI_API_KEY = "test";
+  delete process.env.ANTHROPIC_API_KEY; delete process.env.PERPLEXITY_API_KEY;
+  let gemini = 0, openai = 0;
+  globalThis.fetch = async (url) => {
+    const host = new URL(String(url)).hostname;
+    if (host === "generativelanguage.googleapis.com") {
+      gemini++;
+      return Response.json({ error: { details: [{ retryDelay: "60s" }] } }, { status: 429 });
+    }
+    if (host === "api.openai.com") {
+      openai++;
+      return Response.json({ status: "completed", output: [{ type: "message", content: [{ type: "output_text", text: "Consider your needs and compare pricing." }] }] });
+    }
+    throw new Error("Unexpected network request");
+  };
+  try {
+    const response = await POST(request({ ...input, prompts: { discovery: Array.from({ length: 6 }, (_, i) => `Which tools support use case ${i}?`) } }));
+    const report = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(gemini, 1, "queued Gemini requests must stop after the quota response");
+    assert.equal(openai, 6, "a Gemini outage must not stop another provider");
+    assert.deepEqual(report.coverage, { successful: 6, total: 24 });
+    assert.equal(report.engines.gemini.score, null);
+    assert.equal(report.engines.chatgpt.score, 0);
+    assert.match(report.engineWarnings.gemini, /rate limit/);
+    assert.equal(report.methodologyVersion, "answer-visibility-v3-bounded");
+  } finally {
+    globalThis.fetch = original;
+    for (const key of Object.keys(process.env)) if (!(key in env)) delete process.env[key];
+    Object.assign(process.env, env);
+  }
+});
