@@ -3,7 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import type { EngineResult, PromptResult, ScanData, ICP, TrustSignals } from "@/components/scanner/types";
 import { calculateScores, compareBrands, summarizeFactChecks, citesDomain, parseVerification, parseFactCheck, isSuccessful, ENGINE_KEYS, METHODOLOGY_VERSION } from "@/lib/scan-metrics";
-import { readClaudeAnswer, readGeminiAnswer, readOpenAIAnswer, readPerplexityAnswer, type AnswerEvidence } from "@/lib/scan-evidence";
+import type { AnswerEvidence } from "@/lib/scan-evidence";
+import { createEngineRunner, failureReason, FAILURE_MESSAGES } from "@/lib/engine-requests";
 
 import { reportSession, saveReport } from "@/lib/report-store";
 import { generateKeywords } from "@/lib/scan-keywords";
@@ -431,37 +432,6 @@ async function analyzeAnswer(
   return { appeared, status, snippet, sentiment, factCheck, evidence };
 }
 
-async function fetchEngineAnswer(engine: typeof ENGINE_KEYS[number], prompt: string, apiKey: string, deadline: AbortSignal): Promise<AnswerEvidence> {
-  const signal = AbortSignal.any([deadline, AbortSignal.timeout(45_000)]);
-  if (engine === "claude") {
-    const client = new Anthropic({ fetch: providerFetch("answers.claude"), apiKey, maxRetries: 1, timeout: 45_000 });
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-5", max_tokens: 1000, temperature: 0,
-      tools: [{ type: "web_search_20250305", name: "web_search" }],
-      messages: [{ role: "user", content: prompt }],
-    }, { signal });
-    return readClaudeAnswer(message);
-  }
-  const config = engine === "gemini" ? {
-    url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    body: { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0 }, tools: [{ googleSearch: {} }] },
-  } : engine === "chatgpt" ? {
-    url: "https://api.openai.com/v1/responses",
-    body: { model: "gpt-4o-mini", tools: [{ type: "web_search_preview" }], input: prompt },
-  } : {
-    url: "https://api.perplexity.ai/chat/completions",
-    body: { model: "sonar", messages: [{ role: "user", content: prompt }], max_tokens: 500, temperature: 0 },
-  };
-  const response = await providerFetch(`answers.${engine}`)(config.url, {
-    method: "POST", signal,
-    headers: { "Content-Type": "application/json", ...(engine !== "gemini" ? { Authorization: `Bearer ${apiKey}` } : {}) },
-    body: JSON.stringify(config.body),
-  });
-  if (!response.ok) throw new Error(`${engine} request failed (${response.status})`);
-  const data: unknown = await response.json();
-  return engine === "gemini" ? readGeminiAnswer(data) : engine === "chatgpt" ? readOpenAIAnswer(data) : readPerplexityAnswer(data);
-}
-
 async function mapConcurrent<T, R>(items: T[], limit: number, run: (item: T, index: number) => Promise<R>): Promise<R[]> {
   const output: R[] = new Array(items.length);
   let next = 0;
@@ -603,18 +573,20 @@ async function handlePost(request: NextRequest) {
     const keys = { gemini: geminiKey, claude: claudeKey, chatgpt: openAIKey, perplexity: perplexityKey };
     const runs = await Promise.all(ENGINE_KEYS.map(async (engine) => {
       const repeated = new Map<string, Promise<EngineResult>>();
+      const runEngine = createEngineRunner(engine, keys[engine], deadline);
       const checkPrompt = async (text: string): Promise<EngineResult> => {
         if (deadline.aborted) return { appeared: false, snippet: "", status: "failed" };
         if (!keys[engine]) return { appeared: false, snippet: "", status: "unavailable" };
         try {
-          const evidence = await fetchEngineAnswer(engine, text, keys[engine], deadline);
+          const evidence = await runEngine(text);
           return await analyzeAnswer(evidence, filteredVariations, companyName, domain, businessProfile?.whatTheySell ?? "", deadline);
-        } catch {
-          console.error(`[scan/run] ${engine} check failed`);
-          return { appeared: false, snippet: "", status: "failed" };
+        } catch (error) {
+          const reason = failureReason(error);
+          console.error(`[scan/run] ${engine} check failed: ${reason}`);
+          return { appeared: false, snippet: "", status: "failed", failureReason: reason };
         }
       };
-      const checks = await mapConcurrent(flatPrompts, 4, (fp) => {
+      const checks = await mapConcurrent(flatPrompts, engine === "gemini" ? 1 : 4, (fp) => {
         if (repeated.has(fp.text)) { noteReuse("duplicate-prompt"); return repeated.get(fp.text)!; }
         const check = checkPrompt(fp.text);
         repeated.set(fp.text, check);
@@ -653,6 +625,10 @@ async function handlePost(request: NextRequest) {
       appeared: Object.values(comparisons[competitor].categoryScores).reduce((sum, cat) => sum + cat.appeared, 0),
       total: comparisons[competitor].coverage.successful,
     }]));
+    const engineWarnings = Object.fromEntries(ENGINE_KEYS.flatMap(key => {
+      const reason = engineRuns[key].find(check => check.failureReason)?.failureReason;
+      return reason ? [[key, FAILURE_MESSAGES[reason]]] : [];
+    }));
     const highQualityCount = weights.filter((w) => w === 1).length;
     const totalPrompts = results.length;
     const highQualityPct = highQualityCount / totalPrompts;
@@ -679,7 +655,7 @@ async function handlePost(request: NextRequest) {
       } catch { console.error("[scan/run] Keyword recommendations unavailable"); }
     }
     const report: ScanData = {
-      ...scores, engineErrors, results, competitorResults, factCheckSummary, contentRecommendations,
+      ...scores, engineErrors, engineWarnings, results, competitorResults, factCheckSummary, contentRecommendations,
       domain, businessProfile, trustSignals, businessType,
       icp: icp ?? { primaryBuyer: "", buyerLocation: "", buyerCompanySize: "", buyerPainPoint: "", buyerContext: "" },
       usage: usageSnapshot(),

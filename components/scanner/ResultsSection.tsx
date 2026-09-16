@@ -315,7 +315,7 @@ function EngineCard({
               fontFamily: "var(--font-mono, monospace)",
             }}
           >
-            key inactive
+            Checks unavailable
           </p>
         </>
       ) : (
@@ -1818,6 +1818,10 @@ export function ResultsSection({
             <EngineCard key={key} label={label} engine={scanData.engines?.[key]} active={true} weight={weight} error={scanData.engineErrors?.[key]} />
           ))}
         </div>
+
+        {scanData.engineWarnings && ENGINES.map(({ key, label }) => scanData.engineWarnings?.[key] && (
+          <p key={key} role="status" className="mb-3 text-sm text-amber-800">{label}: {scanData.engineWarnings[key]}</p>
+        ))}
 
         {scanData.comparisonCoverage && scanData.competitorResults && Object.keys(scanData.competitorResults).length > 0 &&
           <p className="mb-3 text-sm text-slate-600">Comparison uses {scanData.comparisonCoverage.successful}/{scanData.comparisonCoverage.total} checks completed for every brand, with identical weights. Its coverage may differ from the overall score.</p>}

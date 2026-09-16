@@ -3,7 +3,7 @@ import type { EngineResult, PromptResult, Category } from "../components/scanner
 export const ENGINE_KEYS = ["gemini", "claude", "chatgpt", "perplexity"] as const;
 export const CATEGORIES: Category[] = ["informational", "discovery", "commercial", "transactional"];
 export const ENGINE_WEIGHTS = { gemini: 0.15, claude: 0.25, chatgpt: 0.25, perplexity: 0.35 };
-export const METHODOLOGY_VERSION = "answer-visibility-v2";
+export const METHODOLOGY_VERSION = "answer-visibility-v3-bounded";
 
 // Missing statuses are supported only for reports saved by the previous release.
 export function isSuccessful(result: EngineResult | undefined) {

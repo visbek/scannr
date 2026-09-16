@@ -1,4 +1,5 @@
 export type EngineResult = {
+  failureReason?: import("../../lib/engine-requests").FailureReason;
   appeared: boolean;
   snippet: string;
   status?: "success" | "failed" | "unavailable" | "unverified";
@@ -87,6 +88,7 @@ export type ScanData = {
   businessProfile: BusinessProfile;
   icp: ICP;
   engines: Record<"gemini" | "claude" | "chatgpt" | "perplexity", EngineInfo>;
+  engineWarnings?: Partial<Record<"gemini" | "claude" | "chatgpt" | "perplexity", string>>;
   engineErrors?: Record<"gemini" | "claude" | "chatgpt" | "perplexity", boolean>;
   categoryScores: Record<Category, CategoryScore>;
   results: PromptResult[];
