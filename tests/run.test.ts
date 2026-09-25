@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import { NextRequest } from "next/server";
 import { POST } from "../app/api/scan/run/route";
 
+process.env.SUPABASE_SERVICE_ROLE_KEY = "quota-test-secret";
+process.env.NEXT_PUBLIC_SUPABASE_URL = "https://reports.test";
+
 const input = {
   domain: "example.com",
   businessProfile: { companyName: "Example", whatTheySell: "", industry: "software" },
@@ -20,7 +23,10 @@ function request(body: unknown, token?: string) {
 
 test("run API rejects excessive work before making external requests", async () => {
   const original = globalThis.fetch;
-  globalThis.fetch = async () => { throw new Error("No external work should start"); };
+  globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/rest/v1/rpc/consume_scan_limit")) return Response.json([{ allowed: true, retry_after: 0 }]);
+    throw new Error("No provider work should start");
+  };
   try {
     assert.equal((await POST(request({ ...input, competitors: ["a.com", "b.com", "c.com", "d.com"] }))).status, 400);
     assert.equal((await POST(request({ ...input, prompts: { discovery: Array(7).fill("Which tools?") } }))).status, 400);
@@ -39,6 +45,7 @@ test("run API reuses duplicate questions and competitor answers and saves usage 
   let providerCalls = 0;
   let writes = 0;
   globalThis.fetch = async (url, init) => {
+    if (String(url).endsWith("/rest/v1/rpc/consume_scan_limit")) return Response.json([{ allowed: true, retry_after: 0 }]);
     const address = new URL(String(url));
     if (address.hostname === "reports.test") {
       if (address.pathname === "/auth/v1/user") return Response.json({ id: "owner", aud: "authenticated", app_metadata: {}, user_metadata: {}, created_at: "2026-09-01" });
@@ -86,6 +93,7 @@ test("run API keeps results available when saving fails; all unavailable is not 
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
   for (const key of ["GEMINI_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "PERPLEXITY_API_KEY"]) delete process.env[key];
   globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/rest/v1/rpc/consume_scan_limit")) return Response.json([{ allowed: true, retry_after: 0 }]);
     const address = new URL(String(url));
     assert.equal(address.hostname, "reports.test");
     return address.pathname === "/auth/v1/user"
@@ -113,6 +121,7 @@ test("Gemini quota stops queued checks while other engines finish and failed che
   delete process.env.ANTHROPIC_API_KEY; delete process.env.PERPLEXITY_API_KEY;
   let gemini = 0, openai = 0;
   globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/rest/v1/rpc/consume_scan_limit")) return Response.json([{ allowed: true, retry_after: 0 }]);
     const host = new URL(String(url)).hostname;
     if (host === "generativelanguage.googleapis.com") {
       gemini++;

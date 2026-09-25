@@ -1,25 +1,11 @@
+import { scanLimitResponse } from "@/lib/scan-limit";
 import { searchSerper } from "@/lib/serper";
 import { measuredRoute, noteResearchFailure } from "@/lib/scan-usage";
 import { NextRequest, NextResponse } from "next/server";
 
 // ─── IP rate limiting ─────────────────────────────────────────────────────────
 
-interface RateLimitEntry { count: number; resetTime: number }
-const researchRateLimitMap = new Map<string, RateLimitEntry>();
-const RESEARCH_RATE_LIMIT_MAX = 10;
-const RESEARCH_RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
-function checkResearchRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = researchRateLimitMap.get(ip);
-  if (!entry || now > entry.resetTime) {
-    researchRateLimitMap.set(ip, { count: 1, resetTime: now + RESEARCH_RATE_LIMIT_WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= RESEARCH_RATE_LIMIT_MAX) return false;
-  entry.count++;
-  return true;
-}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -744,13 +730,8 @@ export async function fetchResearchData(
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 async function handlePost(request: NextRequest) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
-  if (!checkResearchRateLimit(ip)) {
-    return NextResponse.json(
-      { error: "rate_limit", message: "Too many requests. Try again in 24 hours." },
-      { status: 429 }
-    );
-  }
+  const limited = await scanLimitResponse(request.headers, "research");
+  if (limited) return limited;
 
   try {
     const body = await request.json() as { industry?: unknown; companyName?: unknown; domain?: unknown; whatTheySell?: unknown };

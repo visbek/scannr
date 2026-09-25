@@ -1,3 +1,4 @@
+import { scanLimitResponse } from "@/lib/scan-limit";
 import { searchSerper } from "@/lib/serper";
 import { cachedResearch, researchKey } from "@/lib/research-cache";
 import { providerFetch, measuredRoute, hasProviderFailures, noteResearchFailure } from "@/lib/scan-usage";
@@ -91,26 +92,7 @@ function normalizeDomain(input: string): string {
 
 // ─── IP rate limiting ─────────────────────────────────────────────────────────
 
-interface RateLimitEntry {
-  count: number;
-  resetTime: number;
-}
 
-const rateLimitMap = new Map<string, RateLimitEntry>();
-const RATE_LIMIT_MAX = 3;
-const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
-    return true; // allowed
-  }
-  if (entry.count >= RATE_LIMIT_MAX) return false; // blocked
-  entry.count++;
-  return true; // allowed
-}
 
 function cleanCompanyName(name: string): string {
   return name
@@ -942,18 +924,8 @@ async function handlePost(request: NextRequest) {
   console.log("[generate-prompts] Route hit");
 
   // ── IP rate limit check ──────────────────────────────────────────────────
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
-  if (!checkRateLimit(ip)) {
-    console.log(`[generate-prompts] Rate limit exceeded for IP: ${ip}`);
-    return NextResponse.json(
-      {
-        error: "rate_limit",
-        message:
-          "You have used your 3 free scans for today. Upgrade to scan unlimited domains.",
-      },
-      { status: 429 }
-    );
-  }
+  const limited = await scanLimitResponse(request.headers, "generate-prompts");
+  if (limited) return limited;
 
   try {
     const body = await request.json();

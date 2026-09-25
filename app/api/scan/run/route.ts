@@ -1,3 +1,4 @@
+import { scanLimitResponse } from "@/lib/scan-limit";
 import { providerFetch, measuredRoute, usageSnapshot, noteReuse } from "@/lib/scan-usage";
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
@@ -15,22 +16,7 @@ export const maxDuration = 300;
 
 // ─── IP rate limiting ─────────────────────────────────────────────────────────
 
-interface RateLimitEntry { count: number; resetTime: number }
-const runRateLimitMap = new Map<string, RateLimitEntry>();
-const RUN_RATE_LIMIT_MAX = 3;
-const RUN_RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
-function checkRunRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = runRateLimitMap.get(ip);
-  if (!entry || now > entry.resetTime) {
-    runRateLimitMap.set(ip, { count: 1, resetTime: now + RUN_RATE_LIMIT_WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= RUN_RATE_LIMIT_MAX) return false;
-  entry.count++;
-  return true;
-}
 
 function normalizeDomain(input: string): string {
   return input
@@ -449,13 +435,8 @@ async function mapConcurrent<T, R>(items: T[], limit: number, run: (item: T, ind
 async function handlePost(request: NextRequest) {
   console.log("[scan/run] Route hit");
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
-  if (!checkRunRateLimit(ip)) {
-    return NextResponse.json(
-      { error: "rate_limit", message: "Too many scans. Try again in 24 hours." },
-      { status: 429 }
-    );
-  }
+  const limited = await scanLimitResponse(request.headers, "run");
+  if (limited) return limited;
 
   try {
     let session;

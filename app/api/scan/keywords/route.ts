@@ -1,34 +1,15 @@
+import { scanLimitResponse } from "@/lib/scan-limit";
 import { measuredRoute } from "@/lib/scan-usage";
 import { generateKeywords } from "@/lib/scan-keywords";
 import { NextRequest, NextResponse } from "next/server";
 
 // ─── IP rate limiting ─────────────────────────────────────────────────────────
 
-interface RateLimitEntry { count: number; resetTime: number }
-const keywordsRateLimitMap = new Map<string, RateLimitEntry>();
-const KEYWORDS_RATE_LIMIT_MAX = 3;
-const KEYWORDS_RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
-function checkKeywordsRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = keywordsRateLimitMap.get(ip);
-  if (!entry || now > entry.resetTime) {
-    keywordsRateLimitMap.set(ip, { count: 1, resetTime: now + KEYWORDS_RATE_LIMIT_WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= KEYWORDS_RATE_LIMIT_MAX) return false;
-  entry.count++;
-  return true;
-}
 
 async function handlePost(request: NextRequest) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
-  if (!checkKeywordsRateLimit(ip)) {
-    return NextResponse.json(
-      { error: "rate_limit", message: "Too many requests. Try again in 24 hours." },
-      { status: 429 }
-    );
-  }
+  const limited = await scanLimitResponse(request.headers, "keywords");
+  if (limited) return limited;
 
   try {
     const { domain, industry, companyName, whatTheySell, buyerLocation } =
