@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
@@ -10,19 +11,39 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [method, setMethod] = useState<"link" | "password">("link");
+  const [sent, setSent] = useState(false);
+  const submitting = useRef(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setError("");
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = method === "link"
+        ? await supabase.auth.signInWithOtp({
+            email: email.trim(),
+            options: {
+              shouldCreateUser: false,
+              emailRedirectTo: `${window.location.origin}/dashboard`,
+            },
+          })
+        : await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
-      router.push("/dashboard");
+      if (method === "link") setSent(true);
+      else router.push("/dashboard");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Sign in failed");
+      const authError = err as { status?: number; code?: string };
+      setError(authError.status === 429 || authError.code === "over_email_send_rate_limit"
+        ? "Too many sign-in requests. Check your inbox and spam folder for the newest link before requesting another."
+        : method === "link"
+          ? "We could not confirm the sign-in email was sent. Check your inbox and connection. Use your existing Sparrwo account email, or sign up if you are new."
+          : err instanceof Error ? err.message : "Sign in failed");
     } finally {
       setLoading(false);
+      submitting.current = false;
     }
   }
 
@@ -67,7 +88,7 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <a
+          <Link
             href="/"
             style={{
               fontFamily: "var(--font-sans, system-ui)",
@@ -79,7 +100,7 @@ export default function LoginPage() {
             }}
           >
             Scanrr
-          </a>
+          </Link>
         </div>
 
         <div
@@ -110,12 +131,13 @@ export default function LoginPage() {
               marginBottom: 28,
             }}
           >
-            Welcome back. Sign in to your account.
+            Use the same email as your Sparrwo workspace. You can sign in with an email link without setting a password. Scanrr currently requires its own sign-in in this browser.
           </p>
 
           {/* Google */}
           <button
             onClick={handleGoogle}
+            disabled={loading}
             style={{
               width: "100%",
               background: "#ffffff",
@@ -159,9 +181,16 @@ export default function LoginPage() {
             <div style={{ flex: 1, height: 1, background: "#e5e5e0" }} />
           </div>
 
-          <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {sent ? (
+            <div role="status" style={{ color: "#0E1F18", fontSize: 14, lineHeight: 1.6 }}>
+              If this email belongs to an existing account, a sign-in link has been sent. Check your inbox and spam folder. Open the newest link in this browser; each link works once.
+              <p><a href="/dashboard">Open Scanrr dashboard</a></p>
+              <button type="button" onClick={() => { setSent(false); setError(""); }}>Use a different email</button>
+            </div>
+          ) : <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
               <label
+                htmlFor="signin-email"
                 style={{
                   display: "block",
                   fontFamily: "var(--font-sans, system-ui)",
@@ -174,6 +203,8 @@ export default function LoginPage() {
                 Email
               </label>
               <input
+                id="signin-email"
+                autoComplete="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -197,8 +228,9 @@ export default function LoginPage() {
               />
             </div>
 
-            <div>
+            {method === "password" && <div>
               <label
+                htmlFor="signin-password"
                 style={{
                   display: "block",
                   fontFamily: "var(--font-sans, system-ui)",
@@ -211,6 +243,8 @@ export default function LoginPage() {
                 Password
               </label>
               <input
+                id="signin-password"
+                autoComplete="current-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -232,10 +266,10 @@ export default function LoginPage() {
                 onFocus={(e) => (e.currentTarget.style.borderColor = "#0a0a0a")}
                 onBlur={(e) => (e.currentTarget.style.borderColor = "#e5e5e0")}
               />
-            </div>
+            </div>}
 
             {error && (
-              <p style={{ fontSize: 13, color: "#dc2626", fontFamily: "var(--font-sans, system-ui)" }}>
+              <p role="alert" style={{ fontSize: 13, color: "#dc2626", fontFamily: "var(--font-sans, system-ui)" }}>
                 {error}
               </p>
             )}
@@ -259,9 +293,12 @@ export default function LoginPage() {
               onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "#243F33"; }}
               onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = "#1A3A2E"; }}
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {loading ? (method === "link" ? "Sending…" : "Signing in…") : method === "link" ? "Send sign-in link" : "Sign in"}
             </button>
-          </form>
+            <button type="button" disabled={loading} onClick={() => { setMethod(method === "link" ? "password" : "link"); setPassword(""); setError(""); }} style={{ background: "transparent", border: 0, color: "#1A3A2E", textDecoration: "underline", padding: 8, cursor: "pointer" }}>
+              {method === "link" ? "Use a password instead" : "Use an email link instead"}
+            </button>
+          </form>}
         </div>
 
         <p
