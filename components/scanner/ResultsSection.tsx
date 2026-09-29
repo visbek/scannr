@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import { keywordsFromPrompts, KEYWORD_FALLBACK_NOTE } from "@/lib/keyword-fallback";
 import { ScoreCircle } from "@/components/scanner/ScoreCircle";
+import { hasCompleteCoverage, scoreMessage, scoreLabel } from "@/lib/score-presentation";
 import {
   type ScanData,
   type Category,
@@ -122,13 +123,6 @@ function scoreColor(score: number | null) {
   if (score > 66) return "#16a34a";
   if (score >= 33) return "#f97316";
   return "#dc2626";
-}
-
-function scoreMessage(score: number | null) {
-  if (score === null) return "Scan unavailable — no successful checks";
-  if (score > 66) return "Strong AI visibility";
-  if (score >= 33) return "Partial AI visibility";
-  return "Nearly invisible in AI search";
 }
 
 function pct(cs: CategoryScore) {
@@ -685,7 +679,7 @@ function PrintReport({
   });
 
   // Insights — same logic as main component
-  const printInsights = scanData.overallScore !== null && scanData.categoryScores
+  const printInsights = hasCompleteCoverage(scanData) && scanData.categoryScores
     ? (() => {
         const cats = CATEGORIES.map((c) => ({
           ...c,
@@ -775,10 +769,10 @@ function PrintReport({
           </div>
           <div>
             <div style={{ fontSize: 10, color: "#C8B89A", opacity: 0.8, letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: "monospace", marginBottom: 6 }}>
-              AI Visibility Score
+              {scoreLabel(scanData)}
             </div>
             <div style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", fontFamily: "Georgia, serif", marginBottom: 6 }}>
-              {scoreMessage(scanData.overallScore)}
+              {scoreMessage(scanData)}
             </div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
               {scanData.coverage ? `${scanData.coverage.successful}/${scanData.coverage.total} checks completed. Failed and unverified checks are excluded.` : "Historical report — check coverage was not recorded."}
@@ -1595,7 +1589,7 @@ export function ResultsSection({
   const keywordsData = suppliedKeywordsData ?? (keywordsLoading ? null : keywordsFromPrompts(scanData.results));
   const [emailError, setEmailError] = useState("");
 
-  const insights = scanData.overallScore !== null && scanData.categoryScores
+  const insights = hasCompleteCoverage(scanData) && scanData.categoryScores
     ? (() => {
         const cats = CATEGORIES.map((c) => ({
           ...c,
@@ -1698,17 +1692,17 @@ export function ResultsSection({
               textTransform: "uppercase",
             }}
           >
-            AI Visibility Score
+            {scoreLabel(scanData)}
           </p>
           <p
             style={{
               fontFamily: "var(--font-sans, system-ui)",
               fontSize: 16,
               fontWeight: 600,
-              color: scoreColor(scanData.overallScore),
+              color: hasCompleteCoverage(scanData) ? scoreColor(scanData.overallScore) : "#92400e",
             }}
           >
-            {scoreMessage(scanData.overallScore)}
+            {scoreMessage(scanData)}
           </p>
           {scanData.promptQuality && (
             <p
