@@ -15,7 +15,7 @@ export function SavedReport({ id }: { id: string }) {
     const load = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error("Sign in, then reopen this report from your dashboard.");
+        if (!session) throw new Error("Sign in, then reopen this report from your scan history.");
         const response = await fetch(`/api/reports/${encodeURIComponent(id)}`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
           cache: "no-store", signal: controller.signal,
@@ -32,8 +32,9 @@ export function SavedReport({ id }: { id: string }) {
   }, [id]);
   return (
     <main className="min-h-screen bg-[#F5F1EA] text-[#0E1F18]">
-      <header className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-6">
-        <Link className="underline" href="/dashboard">Back to dashboard</Link>
+      <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-6">
+        <a className="underline" href="https://app.sparrwo.com/workspace/tracking">← Sparrwo dashboard</a>
+        <Link className="underline" href="/dashboard">Scan history</Link>
         <Link className="underline" href="/">Run a new scan</Link>
       </header>
       {error ? <div role="alert" className="mx-auto max-w-3xl p-6"><p>{error}</p><Link className="underline" href="/login">Sign in</Link></div>

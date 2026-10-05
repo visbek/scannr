@@ -280,7 +280,8 @@ export default function Home() {
             </a>
           </div>
 
-          {/* Nav CTA */}
+          {/* Customer workspace and standalone scan history */}
+          <a href="https://app.sparrwo.com/workspace/tracking" style={{ fontSize: 13, color: "#1A3A2E", textDecoration: "underline", marginLeft: "auto", marginRight: 16 }}>Sparrwo dashboard</a>
           {user ? (
             <a
               href="/dashboard"
@@ -301,7 +302,7 @@ export default function Home() {
               onMouseEnter={(e) => (e.currentTarget.style.background = "#C8B89A")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "#1A3A2E")}
             >
-              Dashboard
+              Scan history
             </a>
           ) : (
             <a
