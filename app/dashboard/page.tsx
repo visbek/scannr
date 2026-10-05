@@ -160,6 +160,8 @@ export default function DashboardPage() {
       </header>
 
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "40px 24px" }}>
+        <a href="https://app.sparrwo.com/workspace/tracking" style={{ display: "inline-block", marginBottom: 24, textDecoration: "underline", color: "#1A3A2E" }}>← Back to Sparrwo dashboard</a>
+        <p style={{ marginBottom: 24, color: "#555550" }}>Individual scans saved in Scanrr. Open your Sparrwo dashboard for weekly tracking, SEO, analytics and content review.</p>
         {/* Page title */}
         <div
           style={{
@@ -182,7 +184,7 @@ export default function DashboardPage() {
                 marginBottom: 4,
               }}
             >
-              Dashboard
+              Scan history
             </h1>
             {profile && (
               <span
